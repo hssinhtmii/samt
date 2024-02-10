@@ -499,15 +499,56 @@ func convert_to_correct_output(plan db.Plan, c chan PlanReq) {
 	c <- res
 }
 
+type SearchPlan struct {
+	PlanName                    string `json:"plan_name"`
+	YearOfPlanRegistrationDate  int32  `json:"year_of_plan_registration_date"`
+	MonthOfPlanRegistrationDate int32  `json:"month_of_plan_registration_date"`
+}
+
+func (server *Server) searchPlan(ctx *gin.Context) {
+	var req SearchPlan
+	var result []PlanReq
+	c := make(chan PlanReq)
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	arg := db.SearchPlanParams{
+		YearOfPlanRegistrationDate:  req.YearOfPlanRegistrationDate,
+		MonthOfPlanRegistrationDate: req.MonthOfPlanRegistrationDate,
+	}
+	if req.PlanName != "" {
+		arg.PlanName = "%" + req.PlanName + "%"
+	}
+
+	plans, err := server.store.SearchPlan(ctx, arg)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	for _, v := range plans {
+		go convert_to_correct_output(v, c)
+		result = append(result, <-c)
+	}
+	ctx.JSON(http.StatusOK, result)
+
+}
+
 /*
 	arg.PlanName,
 	arg.YearOfPlanRegistrationDate,
 	arg.MonthOfPlanRegistrationDate,
 	arg.DayOfPlanRegistrationDate,
-	arg.PlanName_2,
-	arg.YearOfPlanRegistrationDate_2,
-	arg.MonthOfPlanRegistrationDate_2,
-	arg.DayOfPlanRegistrationDate_2,
+	arg.PlanName2,
+	arg.YearOfPlanRegistrationDate2,
+	arg.MonthOfPlanRegistrationDate2,
+	arg.DayOfPlanRegistrationDate2,
 	arg.PlanCapacity.String,
 	arg.DirectEmployment.Int32,
 	arg.ApplicationOfTheProduct.String,

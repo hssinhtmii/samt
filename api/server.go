@@ -46,6 +46,8 @@ func (server *Server) setupRouter() {
 	router.PUT("/UpdatePlan", server.UpdatePlan)
 	router.DELETE("/DeletePlan", server.deletePlan)
 	router.GET("/allPlans", server.GetAllPlan)
+	router.POST("/plan/search", server.searchPlan)
+	
 	
 	// investor_plan calls
 	router.DELETE("/DeleteInvestorPlan", server.DeleteInvestor_plan)

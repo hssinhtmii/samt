@@ -184,7 +184,7 @@ func (q *Queries) DeletePlan(ctx context.Context, arg DeletePlanParams) error {
 }
 
 const getAllPlans = `-- name: GetAllPlans :many
-SELECT plan_name, year_of_plan_registration_date, month_of_plan_registration_date, day_of_plan_registration_date, plan_capacity, direct_employment, application_of_the_product, selling_price_of_products, analysis_of_the_market_situation, the_amount_of_domestic_production, countrys_need, nominal_capacity_of_existing_active_units, the_nominal_capacity_of_projects_in_progress, technicalknowledgecompany, water, fuel, electricity, land_area, technical_knowledge, type_of_equipment_required, type_and_amount_of_major_raw_materials, the_main_source_of_raw_materials, foreign_exchange_capital, rial_capital, currency, exchange_rate, rial_working_capital, currency_working_capital, period, total_capital, annual_sales, payback_time, image
+SELECT *
 FROM "plan"
 `
 
@@ -246,7 +246,7 @@ func (q *Queries) GetAllPlans(ctx context.Context) ([]Plan, error) {
 }
 
 const getPlan = `-- name: GetPlan :one
-SELECT plan_name, year_of_plan_registration_date, month_of_plan_registration_date, day_of_plan_registration_date, plan_capacity, direct_employment, application_of_the_product, selling_price_of_products, analysis_of_the_market_situation, the_amount_of_domestic_production, countrys_need, nominal_capacity_of_existing_active_units, the_nominal_capacity_of_projects_in_progress, technicalknowledgecompany, water, fuel, electricity, land_area, technical_knowledge, type_of_equipment_required, type_and_amount_of_major_raw_materials, the_main_source_of_raw_materials, foreign_exchange_capital, rial_capital, currency, exchange_rate, rial_working_capital, currency_working_capital, period, total_capital, annual_sales, payback_time, image
+SELECT *
 FROM "plan"
 WHERE plan_name = $1
     AND year_of_plan_registration_date = $2
@@ -305,6 +305,77 @@ func (q *Queries) GetPlan(ctx context.Context, arg GetPlanParams) (Plan, error) 
 		&i.Image,
 	)
 	return i, err
+}
+
+const searchPlan = `-- name: SearchPlan :many
+SELECT *
+FROM plan
+WHERE plan_name LIKE $1
+    OR year_of_plan_registration_date = $2
+    OR month_of_plan_registration_date = $3
+`
+
+type SearchPlanParams struct {
+	PlanName                    string `json:"plan_name"`
+	YearOfPlanRegistrationDate  int32  `json:"year_of_plan_registration_date"`
+	MonthOfPlanRegistrationDate int32  `json:"month_of_plan_registration_date"`
+}
+
+func (q *Queries) SearchPlan(ctx context.Context, arg SearchPlanParams) ([]Plan, error) {
+	rows, err := q.db.QueryContext(ctx, searchPlan, arg.PlanName, arg.YearOfPlanRegistrationDate, arg.MonthOfPlanRegistrationDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Plan
+	for rows.Next() {
+		var i Plan
+		if err := rows.Scan(
+			&i.PlanName,
+			&i.YearOfPlanRegistrationDate,
+			&i.MonthOfPlanRegistrationDate,
+			&i.DayOfPlanRegistrationDate,
+			&i.PlanCapacity,
+			&i.DirectEmployment,
+			&i.ApplicationOfTheProduct,
+			&i.SellingPriceOfProducts,
+			&i.AnalysisOfTheMarketSituation,
+			&i.TheAmountOfDomesticProduction,
+			&i.CountrysNeed,
+			&i.NominalCapacityOfExistingActiveUnits,
+			&i.TheNominalCapacityOfProjectsInProgress,
+			&i.Technicalknowledgecompany,
+			&i.Water,
+			&i.Fuel,
+			&i.Electricity,
+			&i.LandArea,
+			&i.TechnicalKnowledge,
+			&i.TypeOfEquipmentRequired,
+			&i.TypeAndAmountOfMajorRawMaterials,
+			&i.TheMainSourceOfRawMaterials,
+			&i.ForeignExchangeCapital,
+			&i.RialCapital,
+			&i.Currency,
+			&i.ExchangeRate,
+			&i.RialWorkingCapital,
+			&i.CurrencyWorkingCapital,
+			&i.Period,
+			&i.TotalCapital,
+			&i.AnnualSales,
+			&i.PaybackTime,
+			&i.Image,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updatePlan = `-- name: UpdatePlan :one
@@ -400,7 +471,7 @@ WHERE plan_name = $1
     AND year_of_plan_registration_date = $2
     AND month_of_plan_registration_date = $3
     AND day_of_plan_registration_date = $4
-RETURNING plan_name, year_of_plan_registration_date, month_of_plan_registration_date, day_of_plan_registration_date, plan_capacity, direct_employment, application_of_the_product, selling_price_of_products, analysis_of_the_market_situation, the_amount_of_domestic_production, countrys_need, nominal_capacity_of_existing_active_units, the_nominal_capacity_of_projects_in_progress, technicalknowledgecompany, water, fuel, electricity, land_area, technical_knowledge, type_of_equipment_required, type_and_amount_of_major_raw_materials, the_main_source_of_raw_materials, foreign_exchange_capital, rial_capital, currency, exchange_rate, rial_working_capital, currency_working_capital, period, total_capital, annual_sales, payback_time, image
+RETURNING *
 `
 
 type UpdatePlanParams struct {

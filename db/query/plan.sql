@@ -179,3 +179,11 @@ WHERE plan_name = $1
     AND year_of_plan_registration_date = $2
     AND month_of_plan_registration_date = $3
     AND day_of_plan_registration_date = $4;
+-- name: SearchPlan :many
+SELECT *
+FROM plan
+WHERE plan_name LIKE $1
+    OR year_of_plan_registration_date = $2
+    OR month_of_plan_registration_date = $3;
+    -- OR year_of_plan_registration_date > $4
+    -- OR month_of_plan_registration_date > $5;
